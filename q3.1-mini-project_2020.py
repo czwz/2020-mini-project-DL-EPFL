@@ -24,21 +24,12 @@ def sigma(x):
 def dsigma(x):
     return 4 * (x.exp() + x.mul(-1).exp()).pow(-2)
 
-def ReLU(x):
-    return 0.5*( torch.abs(x) + x )
-
-def dReLU(x):
-    return 1. * (x > 0)
-
-#LOSS
 def loss(x, t):
     return np.log10( float(torch.sum((x-t).pow(2)))/float( x.size(1) ) )
 
-#dl/dx
 def dloss(x, t):
     return 2*(x-t)/float( x.size(1) )
 
-#FORWARD AND BACKWARD PASSES
 def forward(w1, b1, w2, b2, w3, b3, w4, b4, x):
     x0 = x
     s1 = torch.mm( x0, w1.T ) + b1
@@ -95,14 +86,22 @@ def create_parameters(fir_hidden_layer_feature, sec_hidden_layer_units, thr_hidd
 ###########################################################################################################
 
 
+#CREATE TRAIN/TEST SET#
+
 train_input, train_target = generate_disc_set(1000)
 test_input, test_target = generate_disc_set(1000)
+
+#CONSTANT ASSIGNING#
+#2 IN/OUT#
+#25 HIDDEN UNITS FOR 3 LAYERS#
 
 fir_hidden_layer_units = 25
 sec_hidden_layer_units = 25
 thr_hidden_layer_units = 25
 output_units = 2
 input_units = train_input.size(1)
+
+#INITIALZE WEIGHTS AND BIAS#
 
 w1, b1, w2, b2, w3, b3, w4 ,b4 , \
 dl_dw1, dl_db1, \
@@ -120,6 +119,8 @@ print("w3 size: {:4d} x{:4d}, (SIZE*hidden1)\nb1 size:       {:4d}  (1*hidden1)"
       format(w3.size()[0], w3.size()[1], b3.size()[0]))
 print("w4 size: {:4d} x{:4d}, (SIZE*hidden1)\nb1 size:       {:4d}  (1*hidden1)\n".
       format(w4.size()[0], w4.size()[1], b4.size()[0]))
+
+#RUN 5 EPOCH; MINIBACH=1000#
 
 number_of_epoch = 5
 eta = 1e-1 / float( train_input.size(0) )
