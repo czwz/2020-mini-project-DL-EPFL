@@ -139,7 +139,6 @@ output_feature = 2
 input_features = train_input.size(1)
 
 number_of_epoch = 5
-batch = 1000
 eta = 1e-1 / train_input.size(1)
 #zeta = 0.90
 
@@ -154,11 +153,10 @@ dl_dw4, dl_db4 = create_parameters(fir_hidden_layer_feature, sec_hidden_layer_fe
                                    output_feature)
 
 print("Input size: {:4d} x{:4d}, (N*SIZE)".format(train_input.size(0), test_input.size()[1] ))
-print("Batch size: {:4d}\n".format(batch))
 print("w1 size: {:4d} x{:4d}, (hidden1*SIZE), b1 size: {:4d}  (hidden1)".format(w1.size()[0], w1.size()[1], b1.size()[0]))
 print("w2 size: {:4d} x{:4d}, (hidden2*SIZE), b2 size: {:4d}  (hidden2)".format(w2.size()[0], w2.size()[1], b2.size()[0]))
 print("w3 size: {:4d} x{:4d}, (hidden3*SIZE), b3 size: {:4d}  (hidden3)".format(w3.size()[0], w3.size()[1], b3.size()[0]))
-print("w4 size: {:4d} x{:4d}, (output *SIZE), b4 size: {:4d}  (output )".format(w4.size()[0], w4.size()[1], b4.size()[0]))
+print("w4 size: {:4d} x{:4d}, (output *SIZE), b4 size: {:4d}  (output )\n".format(w4.size()[0], w4.size()[1], b4.size()[0]))
 
 ###########################################################################################################
 
@@ -175,8 +173,12 @@ for e in range(number_of_epoch):
         x0,s1,x1,s2,x2,s3,x3,s4,x4 = forward(w1, b1, w2, b2, w3, b3, w4, b4, train_input[i])
         
         if x4.argmax() != train_target.argmax(dim=1)[i]:
-            train_error += 1 
-        #SGD#
+            train_error += 1
+        total_loss += loss(x4, train_target[i])
+        
+        backward(w1, b1, w2, b2, w3, b3, w4, b4, train_target[i], x0, s1, x1, s2, x2, s3, x3, s4, x4,\
+                                                                  dl_dw1, dl_db1, dl_dw2, dl_db2, \
+                                                                  dl_dw3, dl_db3, dl_dw4, dl_db4)
         w1.sub_(eta*(dl_dw1))
         b1.sub_(eta*(dl_db1))
         w2.sub_(eta*(dl_dw2))
@@ -186,12 +188,6 @@ for e in range(number_of_epoch):
         w4.sub_(eta*(dl_dw4))
         b4.sub_(eta*(dl_db4))
 
-        total_loss += loss(x4, train_target[i])
-        
-        backward(w1, b1, w2, b2, w3, b3, w4, b4, train_target[i], x0, s1, x1, s2, x2, s3, x3, s4, x4,\
-                                                                  dl_dw1, dl_db1, dl_dw2, dl_db2, \
-                                                                  dl_dw3, dl_db3, dl_dw4, dl_db4)
-        
     if e%1 == 0:
         total_error = 0
         for i in range(0,len(test_input)):
