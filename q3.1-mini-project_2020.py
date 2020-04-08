@@ -77,18 +77,19 @@ def backward(w1, b1, w2, b2, w3, b3, w4, b4,
     dl_db1 = dl_ds1
 
 def create_parameters(fir_hidden_layer_feature, sec_hidden_layer_feature, thr_hidden_layer_feature,
-                      input_features, output_feature, batch):
+                      input_features, output_feature):
     
     w1 = torch.empty(fir_hidden_layer_feature, input_features)
     w2 = torch.empty(sec_hidden_layer_feature, fir_hidden_layer_feature)
     w3 = torch.empty(thr_hidden_layer_feature, sec_hidden_layer_feature)
     w4 = torch.empty(output_feature, thr_hidden_layer_feature)
     
+    epsilon = 1e-6
+
     b1 = torch.empty(fir_hidden_layer_feature)    
     b2 = torch.empty(sec_hidden_layer_feature)
     b3 = torch.empty(thr_hidden_layer_feature).normal_(0, epsilon)
     b4 = torch.empty(output_feature).normal_(0, epsilon)
-    
     w1 = w1.normal_(0, epsilon)
     b1 = b1.normal_(0, epsilon)
     w2 = w2.normal_(0, epsilon)
@@ -120,8 +121,6 @@ def init_gradient(dl_dw1, dl_db1, dl_dw2, dl_db2, dl_dw3, dl_db3, dl_dw4, dl_db4
     dl_dw4.zero_()
     dl_db4.zero_()
 ###########################################################################################################
-###########################################################################################################
-
 
 #CREATE TRAIN/TEST SET#
 
@@ -140,7 +139,6 @@ output_feature = 2
 input_features = train_input.size(1)
 
 number_of_epoch = 5
-epsilon = 1e-7
 batch = 1000
 eta = 1e-1 / train_input.size(1)
 #zeta = 0.90
@@ -153,7 +151,7 @@ dl_dw1, dl_db1, \
 dl_dw2, dl_db2, \
 dl_dw3, dl_db3, \
 dl_dw4, dl_db4 = create_parameters(fir_hidden_layer_feature, sec_hidden_layer_feature, thr_hidden_layer_feature,input_features, \
-                                   output_feature, batch)
+                                   output_feature)
 
 print("Input size: {:4d} x{:4d}, (N*SIZE)".format(train_input.size(0), test_input.size()[1] ))
 print("Batch size: {:4d}\n".format(batch))
@@ -191,8 +189,8 @@ for e in range(number_of_epoch):
         total_loss += loss(x4, train_target[i])
         
         backward(w1, b1, w2, b2, w3, b3, w4, b4, train_target[i], x0, s1, x1, s2, x2, s3, x3, s4, x4,\
-                                                                          dl_dw1, dl_db1, dl_dw2, dl_db2, \
-                                                                          dl_dw3, dl_db3, dl_dw4, dl_db4)
+                                                                  dl_dw1, dl_db1, dl_dw2, dl_db2, \
+                                                                  dl_dw3, dl_db3, dl_dw4, dl_db4)
         
     if e%1 == 0:
         total_error = 0
