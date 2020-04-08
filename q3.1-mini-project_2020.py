@@ -75,6 +75,8 @@ def backward(w1, b1, w2, b2, w3, b3, w4, b4,
     dl_db2 = dl_ds2   
     dl_dw1 = dl_ds1.view(-1, 1).mm(x0.view(1, -1))
     dl_db1 = dl_ds1
+    
+    return dl_dw1, dl_db1, dl_dw2, dl_db2, dl_dw3, dl_db3, dl_dw4, dl_db4
 
 def create_parameters(fir_hidden_layer_feature, sec_hidden_layer_feature, thr_hidden_layer_feature,
                       input_features, output_feature):
@@ -172,9 +174,11 @@ for e in range(number_of_epoch):
             train_error += 1
         total_loss += loss(x4, train_target[i])
         
-        backward(w1, b1, w2, b2, w3, b3, w4, b4, train_target[i], x0, s1, x1, s2, x2, s3, x3, s4, x4,\
-                                                                  dl_dw1, dl_db1, dl_dw2, dl_db2, \
-                                                                  dl_dw3, dl_db3, dl_dw4, dl_db4)
+        
+        dl_dw1, dl_db1, dl_dw2, dl_db2, dl_dw3, dl_db3, dl_dw4, dl_db4 =  backward(w1, b1, w2, b2, w3, b3, w4, b4, train_target[i],\
+                                                                                   x0, s1, x1, s2, x2, s3, x3, s4, x4,\
+                                                                                   dl_dw1, dl_db1, dl_dw2, dl_db2, \
+                                                                                   dl_dw3, dl_db3, dl_dw4, dl_db4)
         w1.sub_(eta*(dl_dw1))
         b1.sub_(eta*(dl_db1))
         w2.sub_(eta*(dl_dw2))
