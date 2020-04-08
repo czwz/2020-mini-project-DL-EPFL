@@ -141,9 +141,6 @@ input_features = train_input.size(1)
 number_of_epoch = 5
 eta = 1e-2
 
-#train_input = train_input * zeta
-#test_input = test_input * zeta
-
 w1, b1, w2, b2, w3, b3, w4 ,b4 , \
 dl_dw1, dl_db1, \
 dl_dw2, dl_db2, \
