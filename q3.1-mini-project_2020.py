@@ -3,7 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 ###########################################################################################################
-###########################################################################################################
 
 def generate_disc_set(nb):
     input = torch.empty(nb,2).uniform_(0,1).type(torch.FloatTensor)
@@ -18,56 +17,86 @@ def generate_disc_set(nb):
             
     return input, target
 
+#ACTIVATION FUNCTION
 def sigma(x):
     return torch.tanh(x)
     
 def dsigma(x):
     return 4 * (x.exp() + x.mul(-1).exp()).pow(-2)
 
+def ReLU(x):
+    return 0.5*( torch.abs(x) + x )
+
+def dReLU(x):
+    return 1. * (x > 0)
+
+#LOSS
 def loss(x, t):
-    return np.log10( float(torch.sum((x-t).pow(2)))/float( x.size(1) ) )
+    return (x - t).pow(2).sum()
 
+#dl/dx
 def dloss(x, t):
-    return 2*(x-t)/float( x.size(1) )
+    return 2*(x-t)
 
+#FORWARD AND BACKWARD PASSES
 def forward(w1, b1, w2, b2, w3, b3, w4, b4, x):
+    
     x0 = x
-    s1 = torch.mm( x0, w1.T ) + b1
-    x1 = sigma( s1 )
-    s2 = torch.mm( x1, w2.T ) + b2
-    x2 = sigma( s2 )
-    s3 = torch.mm( x2, w3.T ) + b3
-    x3 = sigma( s3 )
-    s4 = torch.mm( x2, w4.T ) + b4
-    x4 = sigma( s4 )
+    s1 = w1.mv(x0) + b1
+    x1 = sigma(s1)
+    s2 = w2.mv(x1) + b2
+    x2 = sigma(s2)
+    s3 = w3.mv(x2) + b3
+    x3 = sigma(s3)
+    s4 = w4.mv(x3) + b4
+    x4 = ReLU(s4)    
+    
     return x0,s1,x1,s2,x2,s3,x3,s4,x4                     
     
 def backward(w1, b1, w2, b2, w3, b3, w4, b4,
              t,
              x0, s1, x1, s2, x2, s3, x3, s4, x4,
              dl_dw1, dl_db1, dl_dw2, dl_db2, dl_dw3, dl_db3, dl_dw4, dl_db4):
-    dl_db4.add_(torch.mul( dloss(x4, t), dsigma(s4)))
-    dl_dw4.add_(torch.mm( dl_db4.T, x3 ))
 
-    dl_db3.add_(torch.mul( torch.mm(dl_db4, w4), dsigma(s3)))
-    dl_dw3.add_(torch.mm( dl_db3.T, x2 ))
+    dl_dx4 = dloss(x4, t)
+    dl_ds4 = dReLU(s4) * dl_dx4
+    dl_dx3 = w4.t().mv(dl_ds4)
+    dl_ds3 = dsigma(s3) * dl_dx3
+    dl_dx2 = w3.t().mv(dl_ds3)
+    dl_ds2 = dsigma(s2) * dl_dx2
+    dl_dx1 = w2.t().mv(dl_ds2)
+    dl_ds1 = dsigma(s1) * dl_dx1
 
-    dl_db2.add_(torch.mul( torch.mm(dl_db3, w3), dsigma(s2)))
-    dl_dw2.add_(torch.mm( dl_db2.T, x1 ))
-
-    dl_db1.add_(torch.mul( torch.mm(dl_db2, w2), dsigma(s1)))
-    dl_dw1.add_(torch.mm( dl_db1.T, x0 ))        
+    dl_dw4 = dl_ds4.view(-1, 1).mm(x3.view(1, -1))
+    dl_db4 = dl_ds4
+    dl_dw3 = dl_ds3.view(-1, 1).mm(x2.view(1, -1))
+    dl_db3 = dl_ds3
+    dl_dw2 = dl_ds2.view(-1, 1).mm(x1.view(1, -1))
+    dl_db2 = dl_ds2   
+    dl_dw1 = dl_ds1.view(-1, 1).mm(x0.view(1, -1))
+    dl_db1 = dl_ds1
 
 def create_parameters(fir_hidden_layer_feature, sec_hidden_layer_feature, thr_hidden_layer_feature,
                       input_features, output_feature, batch):
-    w1 = torch.empty(fir_hidden_layer_feature, input_features).normal_(0, epsilon)
-    b1 = torch.empty(batch, fir_hidden_layer_feature).normal_(0, epsilon)
-    w2 = torch.empty(sec_hidden_layer_feature, fir_hidden_layer_feature,).normal_(0, epsilon)
-    b2 = torch.empty(batch, sec_hidden_layer_feature).normal_(0, epsilon)
-    w3 = torch.empty(thr_hidden_layer_feature, sec_hidden_layer_feature).normal_(0, epsilon)
-    b3 = torch.empty(batch, thr_hidden_layer_feature).normal_(0, epsilon)
-    w4 = torch.empty(output_feature, thr_hidden_layer_feature).normal_(0, epsilon)
-    b4 = torch.empty(batch, output_feature).normal_(0, epsilon)
+    
+    w1 = torch.empty(fir_hidden_layer_feature, input_features)
+    w2 = torch.empty(sec_hidden_layer_feature, fir_hidden_layer_feature)
+    w3 = torch.empty(thr_hidden_layer_feature, sec_hidden_layer_feature)
+    w4 = torch.empty(output_feature, thr_hidden_layer_feature)
+    
+    b1 = torch.empty(fir_hidden_layer_feature)    
+    b2 = torch.empty(sec_hidden_layer_feature)
+    b3 = torch.empty(thr_hidden_layer_feature).normal_(0, epsilon)
+    b4 = torch.empty(output_feature).normal_(0, epsilon)
+    
+    w1 = w1.normal_(0, epsilon)
+    b1 = b1.normal_(0, epsilon)
+    w2 = w2.normal_(0, epsilon)
+    b2 = b2.normal_(0, epsilon)
+    w3 = w3.normal_(0, epsilon)
+    b3 = b3.normal_(0, epsilon)
+    w4 = w4.normal_(0, epsilon)
+    b4 = b4.normal_(0, epsilon)
     
     dl_dw1 = torch.empty(w1.size())
     dl_db1 = torch.empty(b1.size())
@@ -80,6 +109,16 @@ def create_parameters(fir_hidden_layer_feature, sec_hidden_layer_feature, thr_hi
     
     return w1, b1, w2, b2, w3, b3, w4 ,b4 ,dl_dw1, dl_db1, dl_dw2, dl_db2, dl_dw3, dl_db3, dl_dw4, dl_db4
 
+def init_gradient(dl_dw1, dl_db1, dl_dw2, dl_db2, dl_dw3, dl_db3, dl_dw4, dl_db4):
+    
+    dl_dw1.zero_()
+    dl_db1.zero_()
+    dl_dw2.zero_()
+    dl_db2.zero_()
+    dl_dw3.zero_()
+    dl_db3.zero_()
+    dl_dw4.zero_()
+    dl_db4.zero_()
 ###########################################################################################################
 ###########################################################################################################
 
@@ -101,7 +140,7 @@ output_feature = 2
 input_features = train_input.size(1)
 
 number_of_epoch = 5
-epsilon = 1e-6
+epsilon = 1e-7
 batch = 1000
 eta = 1e-1 / train_input.size(1)
 #zeta = 0.90
@@ -118,58 +157,49 @@ dl_dw4, dl_db4 = create_parameters(fir_hidden_layer_feature, sec_hidden_layer_fe
 
 print("Input size: {:4d} x{:4d}, (N*SIZE)".format(train_input.size(0), test_input.size()[1] ))
 print("Batch size: {:4d}\n".format(batch))
-print("w1 size: {:4d} x{:4d}, (SIZE*hidden1)\nb1 size: {:4d} x{:4d}  (batch*hidden1)".
-      format(w1.size()[0], w1.size()[1], b1.size()[0], b1.size()[1]))
-print("w2 size: {:4d} x{:4d}, (SIZE*hidden1)\nb1 size: {:4d} x{:4d}  (batch*hidden1)".
-      format(w2.size()[0], w2.size()[1], b2.size()[0], b2.size()[1]))
-print("w3 size: {:4d} x{:4d}, (SIZE*hidden1)\nb1 size: {:4d} x{:4d}  (batch*hidden1)".
-      format(w3.size()[0], w3.size()[1], b3.size()[0], b3.size()[1]))
-print("w4 size: {:4d} x{:4d}, (SIZE*hidden1)\nb1 size: {:4d} x{:4d}  (batch*hidden1)\n".
-      format(w4.size()[0], w4.size()[1], b4.size()[0], b4.size()[1]))
+print("w1 size: {:4d} x{:4d}, (hidden1*SIZE), b1 size: {:4d}  (hidden1)".format(w1.size()[0], w1.size()[1], b1.size()[0]))
+print("w2 size: {:4d} x{:4d}, (hidden2*SIZE), b2 size: {:4d}  (hidden2)".format(w2.size()[0], w2.size()[1], b2.size()[0]))
+print("w3 size: {:4d} x{:4d}, (hidden3*SIZE), b3 size: {:4d}  (hidden3)".format(w3.size()[0], w3.size()[1], b3.size()[0]))
+print("w4 size: {:4d} x{:4d}, (output *SIZE), b4 size: {:4d}  (output )".format(w4.size()[0], w4.size()[1], b4.size()[0]))
+
+###########################################################################################################
 
 #TRAIN & UPDATE
 for e in range(number_of_epoch):
     
-    dl_dw1.zero_()
-    dl_db1.zero_()
-    dl_dw2.zero_()
-    dl_db2.zero_()
-    dl_dw3.zero_()
-    dl_db3.zero_()
-    dl_dw4.zero_()
-    dl_db4.zero_()
+    init_gradient(dl_dw1, dl_db1, dl_dw2, dl_db2, dl_dw3, dl_db3, dl_dw4, dl_db4)
     
     train_error = 0
     test_error = 0
     total_loss = 0
     
-    for i in range(0,len(train_input),batch):
-        x0,s1,x1,s2,x2,s3,x3,s4,x4 = forward(w1, b1, w2, b2, w3, b3, w4, b4, train_input[i:i+batch])
-        backward(w1, b1, w2, b2, w3, b3, w4, b4, train_target[i:i+batch], x0, s1, x1, s2, x2, s3, x3, s4, x4,\
+    for i in range(0,len(train_input)):
+        x0,s1,x1,s2,x2,s3,x3,s4,x4 = forward(w1, b1, w2, b2, w3, b3, w4, b4, train_input[i])
+        
+        if x4.argmax() != train_target.argmax(dim=1)[i]:
+            train_error += 1 
+        #SGD#
+        w1.sub_(eta*(dl_dw1))
+        b1.sub_(eta*(dl_db1))
+        w2.sub_(eta*(dl_dw2))
+        b2.sub_(eta*(dl_db2))
+        w3.sub_(eta*(dl_dw3))
+        b3.sub_(eta*(dl_db3))
+        w4.sub_(eta*(dl_dw4))
+        b4.sub_(eta*(dl_db4))
+
+        total_loss += loss(x4, train_target[i])
+        
+        backward(w1, b1, w2, b2, w3, b3, w4, b4, train_target[i], x0, s1, x1, s2, x2, s3, x3, s4, x4,\
                                                                           dl_dw1, dl_db1, dl_dw2, dl_db2, \
                                                                           dl_dw3, dl_db3, dl_dw4, dl_db4)
         
-        for j in range(batch):
-            if x4.argmax(dim=1)[j] != train_target.argmax(dim=1)[i+j]:
-                train_error += 1 
-        
-        w1 = w1 - eta*(dl_dw1)
-        b1 = b1 - eta*(dl_db1)
-        w2 = w2 - eta*(dl_dw2)
-        b2 = b2 - eta*(dl_db2)
-        w3 = w3 - eta*(dl_dw3)
-        b3 = b3 - eta*(dl_db3)
-        w4 = w4 - eta*(dl_dw4)
-        b4 = b4 - eta*(dl_db4)
-
-        total_loss += loss(x4, train_target[i:i+batch])
-        
     if e%1 == 0:
         total_error = 0
-        for i in range(0,len(test_input),batch):
-            _,_,_,_,_,_,_,_,nx4 = forward(w1, b1, w2, b2, w3, b3, w4, b4, test_input[i:i+batch])
-            for j in range(batch):
-                if nx4.argmax(dim=1)[j] != test_target.argmax(dim=1)[i+j]:
-                    test_error += 1 
-        print("epoch= {:2d}, total loss= {:f}, train error= {}, test error= {}".\
+        for i in range(0,len(test_input)):
+            _,_,_,_,_,_,_,_,nx4 = forward(w1, b1, w2, b2, w3, b3, w4, b4, test_input[i])
+            if nx4.argmax() != test_target.argmax(dim=1)[i]:
+                test_error += 1 
+                
+        print("epoch= {:2d}, total loss= {:f}, train error= {:f}, test error= {:f}".\
               format(e, total_loss, train_error, test_error))
