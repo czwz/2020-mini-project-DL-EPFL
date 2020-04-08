@@ -139,8 +139,7 @@ output_feature = 2
 input_features = train_input.size(1)
 
 number_of_epoch = 5
-eta = 1e-1 / train_input.size(1)
-#zeta = 0.90
+eta = 1e-2
 
 #train_input = train_input * zeta
 #test_input = test_input * zeta
