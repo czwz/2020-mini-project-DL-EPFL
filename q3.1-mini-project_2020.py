@@ -86,7 +86,7 @@ def create_parameters(fir_hidden_layer_feature, sec_hidden_layer_feature, thr_hi
     w3 = torch.empty(thr_hidden_layer_feature, sec_hidden_layer_feature)
     w4 = torch.empty(output_feature, thr_hidden_layer_feature)
     
-    epsilon = 1e-6
+    epsilon = 1e-1
 
     b1 = torch.empty(fir_hidden_layer_feature)    
     b2 = torch.empty(sec_hidden_layer_feature)
@@ -140,8 +140,8 @@ thr_hidden_layer_feature = 25
 output_feature = 2
 input_features = train_input.size(1)
 
-number_of_epoch = 5
-eta = 1e-2
+number_of_epoch = 501
+eta = 5e-1 / train_input.size(0)
 
 w1, b1, w2, b2, w3, b3, w4 ,b4 , \
 dl_dw1, dl_db1, \
