@@ -5,7 +5,7 @@ train_input, train_target = generate_disc_set(1000)
 test_input, test_target = generate_disc_set(1000)
 
 nb = len(train_input)
-lr = 1e-1/nb
+lr = 1e1/nb
 mynn = model()
 cri = criterion_mse(mynn)
 opt = optimizer_sgd(lr,mynn)
