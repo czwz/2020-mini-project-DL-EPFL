@@ -20,30 +20,49 @@ class model:
     def l_counter(self):
         lt = self.lt
         self.lt = lt + 1
-    def train(self,x,t,s):
-        if self.ini == 0:
-            for i in range(len(s)):
-                s[i].ini(x)
-            for i in range(len(s)):
-                s[i].forward(x, self.ln)
-            for i in range(len(s)-1,-1,-1):
-                s[i].backward(t, self.ln)
-            self.ini = 1
-        elif self.ini == 1:
-            for i in range(len(s)):
-                s[i].forward(x, self.ln)
-            for i in range(len(s)-1,-1,-1):
-                s[i].backward(t, self.ln)            
-                 
+    def train(self,x,t,s,forward_only=False):
+        
+        # if  forward_only: do only the forward pass regardless target (t), set current layer (ln=0)
+        # if !forward_only: 
+        #     whenever the parameters are not initialized (ini==0), first do the initialization (ini=1)
+        #     do the forward (with given seqeunce (s)), update current layer (ln+=1)
+        #     do the backward (with reversed given sequence (s)), update current layer (ln-=1)
+        
+        if forward_only==False:
+            if self.ini == 0:
+                for i in range(len(s)):
+                    s[i].ini(x)
+                for i in range(len(s)):
+                    s[i].forward(x, self.ln)
+                for i in range(len(s)-1,-1,-1):
+                    s[i].backward(t, self.ln)
+                self.ini = 1
+            elif self.ini == 1:
+                for i in range(len(s)):
+                    s[i].forward(x, self.ln)
+                for i in range(len(s)-1,-1,-1):
+                    s[i].backward(t, self.ln)      
+        elif forward_only==True:
+                for i in range(len(s)):
+                    s[i].forward(x, self.ln)  
+                self.ln=0
+            
 class criterion_mse:
+    
+    # loss: calculate MSE_Loss given x (input) and t (target)
+    # dloss: do gradient of MSE_Loss and return the gradient
+    
     def __init__(self,nn):
         return None
     def loss(self,x,t):
-        return (x - t).pow(2).sum()
+        return (x-t).pow(2).sum()
     def dloss(delf,x,t):
         return 2*(x-t)
                     
 class optimizer_sgd:
+    
+    # for 'every' sample, update the weights (w) and bias (b) in NN by gradient descent
+    
     def __init__(self,lr,nn):
         self.lr = lr
         self.nn = nn
@@ -53,6 +72,10 @@ class optimizer_sgd:
             self.nn.b[i] = self.nn.b[i] - self.lr*self.nn.dl_db[i]
 
 class sigmoid:
+    
+    # forward: do Tanh operation and record x(ln) for current layer (ln)
+    # backward: do gradient of Tanh and record dl_ds(ln) 
+    
     def __init__(self, nn):
         self.nn = nn
         return None
@@ -65,7 +88,30 @@ class sigmoid:
         s0 = self.nn.s[ln]
         self.nn.dl_ds[ln] = 4*(s0.exp() + s0.mul(-1).exp()).pow(-2)
 
+class relu:
+    
+    # forward: do rectifier operation and record x(ln) for current layer (ln)
+    # backward: do gradient of rectifier and record dl_ds(ln) 
+    
+    def __init__(self, nn):
+        self.nn = nn
+        return None
+    def ini(self,x):
+        pass
+    def forward(self,x,ln):
+        s0 = self.nn.s[ln]
+        self.nn.x[ln] = 0.5*(torch.abs(s0)+s0)
+    def backward(self,t,ln):
+        s0 = self.nn.s[ln]
+        self.nn.dl_ds[ln] = 1.*(s0 > 0)
+        
 class linear:
+    
+    # ini: method for initialization of parameters in the model nn, update ini=1
+    # forward: do forward matrix operation of input, record x(ln), s(ln) for current layer(ln) in model nn, and update ln+=1
+    # backward: do the backward matrix operation, record dl_dw(ln) & dl_db(ln), and update ln-=1
+    #           operation is different for ln==lt and for ln!=lt where lt is last layer
+    
     def __init__(self, m, n, nn, criterion):
         self.epsilon = 1e-1
         self.n = n
