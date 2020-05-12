@@ -13,10 +13,6 @@ class model:
         self.lt = 0
         self.ln = 0
         self.ini = 0
-    def loss(self,x,t):
-        return (x-t).pow(2).sum()
-    def dloss(self,x,t):
-        return 2*(x-t)
     def l_counter(self):
         lt = self.lt
         self.lt = lt + 1
