@@ -14,13 +14,13 @@ cri = criterion_mse(mynn)
 opt = optimizer_sgd(lr,mynn)
 
 # define the sequential structure for NN
-# Here I choose: FF(2x25)-sig-FF(25x25)-ReLU-FF(25x25)-sig, where
-#                FF (Fully connected), sig (Tanh activation), ReLU (rectified linear unit )
+# Here I choose: FF(2x25)-sig-FF(25x25)-sig-FF(25x25)-sig, where
+#                FF (Fully connected), sig (Tanh activation)
 
 sequence = [ linear(2,25,mynn,cri),
              sigmoid(mynn),
              linear(25,25,mynn,cri),
-             relu(mynn),
+             sigmoid(mynn),
              linear(25,2,mynn,cri),
              sigmoid(mynn)
            ]
