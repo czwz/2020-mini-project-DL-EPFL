@@ -1,5 +1,4 @@
 # mini-project-2020-DL-EPFL
-[![Movie_Recommendation](https://img.shields.io/badge/Presentation-Slides-orange?labelColor=0f4c81&color=8d0045)](https://large-type.com/#UNDER%20CONSTRUCTION%20%3A\))
 - This repo contains files (shown below) for the project of the course EPFL EE-559 Deep learning.
 
 ```diff
